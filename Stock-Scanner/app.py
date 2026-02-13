@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify
 from datetime import datetime
 import pytz
+import os
 from database import get_all_alerts, get_ticker_alerts, get_unique_tickers, init_db
 
 app = Flask(__name__)
@@ -52,5 +53,5 @@ def api_latest():
     return jsonify(alerts)
 
 if __name__ == '__main__':
-    # For local testing
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
