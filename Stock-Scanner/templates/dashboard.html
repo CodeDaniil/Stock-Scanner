@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Scanner - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .alerts-container {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .alert-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border-left: 5px solid #667eea;
+        }
+        
+        .alert-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .ticker-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .gain {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #27ae60;
+            padding: 8px 15px;
+            background: #e8f8f5;
+            border-radius: 8px;
+        }
+        
+        .timestamp {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        
+        .alert-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .detail-label {
+            color: #888;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .news-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .news-link:hover {
+            text-decoration: underline;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 60px 20px;
+        }
+        
+        .empty-state h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        @media (max-width: 768px) {
+            .alert-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .gain {
+                margin-top: 10px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 Stock Scanner Alerts</h1>
+            <p class="subtitle">Real-time tracking of your stock criteria matches</p>
+        </header>
+        
+        {% if alerts %}
+        <div class="alerts-container">
+            {% for alert in alerts %}
+            <a href="/ticker/{{ alert.ticker }}" style="text-decoration: none; color: inherit;">
+                <div class="alert-card">
+                    <div class="alert-header">
+                        <span class="ticker-name">{{ alert.ticker }}</span>
+                        <span class="gain">+{{ "%.2f"|format(alert.gain) }}%</span>
+                    </div>
+                    <div class="timestamp">⏰ {{ alert.timestamp_formatted }}</div>
+                    
+                    <div class="alert-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Price</div>
+                            <div class="detail-value">${{ "%.2f"|format(alert.price) }}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Volume</div>
+                            <div class="detail-value">{{ "{:,.0f}"|format(alert.volume) }}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Volume Mult</div>
+                            <div class="detail-value">{{ "%.2f"|format(alert.volume / alert.rel_volume if alert.rel_volume > 0 else 0) }}x</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Free Float</div>
+                            <div class="detail-value">{{ "{:,.0f}"|format(alert.free_float) }}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">EMA5</div>
+                            <div class="detail-value">${{ "%.2f"|format(alert.ema5) }}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">EMA9</div>
+                            <div class="detail-value">${{ "%.2f"|format(alert.ema9) }}</div>
+                        </div>
+                    </div>
+                    
+                    {% if alert.news_url %}
+                    <a href="{{ alert.news_url }}" target="_blank" class="news-link">📰 View Latest News</a>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h2>No Alerts Yet</h2>
+            <p>Waiting for stocks to meet your criteria...</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        // Auto-refresh every 30 seconds
+        setTimeout(function() {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

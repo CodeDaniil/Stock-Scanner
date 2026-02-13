@@ -17,6 +17,7 @@ from config import (
     MIN_FREE_FLOAT,
     MIN_VOLUME_MULTIPLIER
 )
+from database import add_alert, init_db
 
 # Market timezone
 MARKET_TZ = pytz.timezone('US/Eastern')
@@ -218,6 +219,26 @@ class StockScanner:
             
             print(f"✅ Email sent for {ticker}")
             
+            # Log to database
+            news = self.get_sec_news(ticker)
+            news_headline = news[0]['headline'] if news else None
+            news_url = news[0]['url'] if news else None
+            
+            add_alert(
+                ticker=ticker,
+                price=data['price'],
+                gain=data['gain'],
+                ema5=data['ema5'],
+                ema9=data['ema9'],
+                vwap=data['vwap'],
+                volume=int(data['volume']),
+                rel_volume=int(data['rel_volume']),
+                free_float=int(data['free_float']),
+                news_headline=news_headline,
+                news_url=news_url
+            )
+            print(f"✅ Alert logged to database for {ticker}")
+            
         except Exception as e:
             print(f"❌ Error sending email: {e}")
     
@@ -265,9 +286,14 @@ class StockScanner:
 def main():
     scanner = StockScanner()
     
+    # Initialize database
+    init_db()
+    
     print("🚀 Stock Scanner Started!")
     print(f"Scanning every {SCAN_INTERVAL} minutes")
     print(f"Criteria: >{MIN_GAIN_PERCENT}% gain, EMA5>EMA9, Vol>{MIN_VOLUME_MULTIPLIER}x rel vol, Free Float<{MIN_FREE_FLOAT/1_000_000}M")
+    print("-" * 50)
+    print("📊 Dashboard: http://localhost:5000")
     print("-" * 50)
     
     # Schedule scan
